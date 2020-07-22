@@ -199,7 +199,16 @@ def write_verify(phone):
 ####PAGE EXPORT
 
 def export_data_change():
-    
+    global temp_list1,Phone_Options
+    phone_no_list = list()
+    for phone in range(0, len(temp_list1)):
+        if temp_list1[phone]["Verification"] == "Verified":
+            phone_no_list.append(temp_list1[phone]["Phone_No"])
+    Phone_Options.children["menu"].delete(0,'end')
+    print(phone_no_list)
+    for phone in phone_no_list:
+        Phone_Options.children["menu"].add_command(phone)
+
 
 
 def Fetch_Groups():
@@ -304,7 +313,7 @@ class StartPage(tk.Frame):
         Change_button.grid(row=0, column=0,padx=50,pady=25,ipadx=5,ipady=5)
         Export_button = tk.Button(self, activebackground="#8fa1a1", activeforeground="black", bd="5", bg="white",
                                   fg="black", text="EXPORT", font=("Courier", "10", "bold"),
-                                  command=lambda: controller.show_frame(PageTwo))
+                                  command=lambda: [controller.show_frame(PageTwo),export_data_change()])
         Export_button.grid(row=0, column=1,ipadx=5,ipady=5,padx=160)
         Import_button = tk.Button(self, activebackground="#8fa1a1", activeforeground="black", bd="5", bg="white",
                                   fg="black", text="ADD USERS", font=("Courier", "10", "bold"),
@@ -472,7 +481,7 @@ class PageOne(tk.Frame):
 class PageTwo(tk.Frame):
     def __init__(self,parent,controller):
         tk.Frame.__init__(self,parent)
-        global temp_list1,count_group,treetimegroup
+        global temp_list1,count_group,treetimegroup,Phone_Options
         back_button = tk.Button(self, activebackground="#8fa1a1", activeforeground="black", bd="5", bg="white",
                                 fg="black", text="BACK", font=("Courier", "10", "bold"),
                                 command=lambda: [controller.show_frame(StartPage)])
@@ -483,9 +492,13 @@ class PageTwo(tk.Frame):
                 phone_no_list.append(temp_list1[phone]["Phone_No"])
 
         variable = tk.StringVar(self)
-        variable.set(phone_no_list[0])  # default value
+        try:
+            variable.set(phone_no_list[0])  # default value
+            Phone_Options = tk.OptionMenu(self, variable, *phone_no_list)
+        except:
+            variable.set("Empty")
+            Phone_Options = tk.OptionMenu(self, variable, "Empty")
 
-        Phone_Options = tk.OptionMenu(self, variable, *phone_no_list)
         Phone_Options.grid(row=0, column=4, pady=10, padx=20, ipadx=5,ipady=5,sticky="n")
 
         select_button = tk.Button(self, activebackground="#8fa1a1", activeforeground="black", bd="5", bg="white",
