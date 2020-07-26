@@ -1,15 +1,21 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter.filedialog import askopenfilename
 from telethon.sync import TelegramClient
 from telethon.tl.functions.messages import GetDialogsRequest
 from telethon.tl.types import InputPeerEmpty
+from telethon.tl.types import InputPeerChannel
+from telethon.tl.types import InputPeerUser
+from telethon.errors.rpcerrorlist import PeerFloodError,UserPrivacyRestrictedError
+from telethon.tl.functions.channels import InviteToChannelRequest
 from threading import Thread
 import asyncio
 import time
-LARGE_FONT=("Verdana",12)
+import random
+import traceback
 import csv
-import pandas
-import numpy
+
+LARGE_FONT=("Verdana",12)
 
 #CHANGE PAGE VARIABLES
 file_name = "data.csv" #FILE WITH MAIN NO
@@ -139,8 +145,11 @@ def authorize():
     loop1 = asyncio.new_event_loop()
     asyncio.set_event_loop(loop1)
     count=0
-    try:
-        for user in temp_list1:
+    print(temp_list1)
+
+    for user in temp_list1:
+        try:
+            print(user)
             if user["Verification"]=="Not Verified":
                 client = TelegramClient(user["Phone_No"], user["Api_Id"], user["Api_Hash"],loop=loop1)
                 client.connect()
@@ -160,6 +169,7 @@ def authorize():
                     Input_label['text']="Hey :"
 
                 else:
+                    temp_list1[count]["Verification"] = "Verified"
                     print("client is connected")
                 client.disconnect()
             print(countstart)
@@ -174,8 +184,9 @@ def authorize():
                     temp_list1[len(temp_list1) - countstart]["Verification"]))
                 countstart = countstart + 1
             count=count+1
-    except:
-        print("Couldn't connect")
+        except:
+            print("Couldn't connect")
+            count=count+1
 
 def write_verify(phone):
     global file_name
@@ -202,15 +213,16 @@ def write_verify(phone):
 ####PAGE EXPORT
 
 def export_data_change():
-    global temp_list1,Phone_Options
+    global temp_list1,Phone_Options,variable
     phone_no_list = list()
     for phone in range(0, len(temp_list1)):
         if temp_list1[phone]["Verification"] == "Verified":
             phone_no_list.append(temp_list1[phone]["Phone_No"])
-    Phone_Options.delete(0,'end')
+    Phone_Options['menu'].delete(0, 'end')
     print(phone_no_list)
     for phone in phone_no_list:
-        Phone_Options.add_command(label=phone)
+        Phone_Options['menu'].add_command(label=phone, command=tk._setit(variable, phone))
+
 
 
 
@@ -241,11 +253,8 @@ def Fetch_Groups():
         ))
         chats.extend(result.chats)
         for chat in chats:
-            try:
-                if chat.megagroup == True:
-                    groups.append(chat)
-            except:
-                continue
+            groups.append(chat)
+
         #print('Choose a group to scrape members from:')
         i = 1
         for g in groups:
@@ -316,33 +325,33 @@ def ScrapeMembers():
 ###ADD PAGE
 
 def import_data_change():
-    global temp_list1,Phone_Options_Add
+    global temp_list1,Phone_Options_Add,variable_Add
     phone_no_list = list()
     for phone in range(0, len(temp_list1)):
         if temp_list1[phone]["Verification"] == "Verified":
             phone_no_list.append(temp_list1[phone]["Phone_No"])
-    Phone_Options_Add.children["menu"].delete(0,'end')
+    Phone_Options_Add['menu'].delete(0, 'end')
     print(phone_no_list)
     for phone in phone_no_list:
-        Phone_Options_Add.children["menu"].add_command(label=phone)
+        Phone_Options_Add['menu'].add_command(label=phone, command=tk._setit(variable_Add, phone))
 
 def Fetch_Groups_Add():
-    global count_group,treetimegroup,Phone_Options,variable,client_list,groups,list_groups
+    global count_group_add,treetimegroup_add,Phone_Options_Add,variable_Add,client_list_add,groups_add,list_groups_add,time_select_lower,time_select_upper
     try:
         loop1 = asyncio.new_event_loop()
         asyncio.set_event_loop(loop1)
-        list_groups=list()
-        Selected_No=variable.get()
+        list_groups_add=list()
+        Selected_No=variable_Add.get()
         for i in range(0,len(temp_list1)):
             if temp_list1[i]["Phone_No"]== Selected_No:
-                client_list=temp_list1[i]
+                client_list_add=temp_list1[i]
                 break
-        client = TelegramClient(client_list["Phone_No"], client_list["Api_Id"], client_list["Api_Hash"],loop=loop1)
+        client = TelegramClient(client_list_add["Phone_No"], client_list_add["Api_Id"], client_list_add["Api_Hash"],loop=loop1)
         client.connect()
         chats = []
         last_date = None
         chunk_size = 200
-        groups = []
+        groups_add = []
 
         result = client(GetDialogsRequest(
             offset_date=last_date,
@@ -353,32 +362,66 @@ def Fetch_Groups_Add():
         ))
         chats.extend(result.chats)
         for chat in chats:
-            try:
-                if chat.megagroup == True:
-                    groups.append(chat)
-            except:
-                continue
+            groups_add.append(chat)
         #print('Choose a group to scrape members from:')
         i = 1
-        for g in groups:
+        for g in groups_add:
             g_list=[str(i),str(g.id),str(g.title)]
             #print(str(i) + '-' + str(g.id))
-            list_groups.append(g_list)
+            list_groups_add.append(g_list)
             i += 1
-        print(list_groups)
-        for i in range(1, count_group):
-            treetimegroup.delete(str(i))
-        count_group = 1
-        for i in range(0, len(list_groups)):
-            treetimegroup.insert("", "end", str(count_group), text=str(count_group), value=(
-                list_groups[i][1],
-                list_groups[i][2]))
-            count_group = count_group + 1
+        print(list_groups_add)
+        for i in range(1, count_group_add):
+            treetimegroup_add.delete(str(i))
+        count_group_add = 1
+        for i in range(0, len(list_groups_add)):
+            treetimegroup_add.insert("", "end", str(count_group_add), text=str(count_group_add), value=(
+                list_groups_add[i][1],
+                list_groups_add[i][2]))
+            count_group_add = count_group_add + 1
             client.disconnect()
     except:
-        client.disconnect()
-    finally:
-        print("")
+        try:
+            client.disconnect()
+        except:
+            print('Error Encountered')
+
+def Add_Groups():
+    global client_list_add, group_list_pos, groups_add, list_groups, group_input, list_groups_add,time_select_lower,time_select_upper
+
+    loop1 = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop1)
+    client = TelegramClient(client_list_add["Phone_No"], client_list_add["Api_Id"], client_list_add["Api_Hash"],
+                            loop=loop1)
+    client.connect()
+
+    target_group = groups_add[int(group_list_pos_add)]
+    target_group_entity = InputPeerChannel(target_group.id, target_group.access_hash)
+    n=0
+    for user in users:
+        n += 1
+        if n % 50 == 0:
+            time.sleep(900)
+        try:
+            print("Adding {}".format(user['id']))
+
+            user_to_add = InputPeerUser(user['id'], user['access_hash'])
+
+            client(InviteToChannelRequest(target_group_entity, [user_to_add]))
+            print("Waiting for "+time_select_lower.get()+" - "+time_select_upper.get() +"Seconds...")
+            time.sleep(random.randrange(int(time_select_lower.get()), int(time_select_upper.get())))
+        except PeerFloodError:
+            print("Getting Flood Error from telegram. Script is stopping now. Please try again after some time.")
+        except UserPrivacyRestrictedError:
+            print("The user's privacy settings do not allow you to do this. Skipping.")
+        except:
+            traceback.print_exc()
+            print("Unexpected Error")
+            continue
+
+
+
+
 
 
 
@@ -598,7 +641,7 @@ class PageOne(tk.Frame):
 class PageTwo(tk.Frame):
     def __init__(self,parent,controller):
         tk.Frame.__init__(self,parent)
-        global temp_list1,count_group,treetimegroup,Phone_Options,variable,group_input
+        global temp_list1,count_group,treetimegroup,Phone_Options,variable,group_input,No_select_input
         back_button = tk.Button(self, activebackground="#8fa1a1", activeforeground="black", bd="5", bg="white",
                                 fg="black", text="BACK", font=("Courier", "10", "bold"),
                                 command=lambda: [controller.show_frame(StartPage)])
@@ -665,7 +708,7 @@ class PageTwo(tk.Frame):
 class PageThree(tk.Frame):
     def __init__(self,parent,controller):
         tk.Frame.__init__(self,parent)
-        global Phone_Options_Add
+        global Phone_Options_Add,variable_Add,count_group_add,treetimegroup_add,group_input_add,time_select_lower,time_select_upper,count_user,treetimegroup_add_users,No_select_input
         back_button = tk.Button(self, activebackground="#8fa1a1", activeforeground="black", bd="5", bg="white",
                                 fg="black", text="BACK", font=("Courier", "10", "bold"),
                                 command=lambda: [controller.show_frame(StartPage)])
@@ -677,33 +720,126 @@ class PageThree(tk.Frame):
 
         variable_Add = tk.StringVar(self)
         try:
-            #variable_Add.set(phone_no_list[0])  # default value
+            variable_Add.set("Select Phone No")  # default value
             Phone_Options_Add = tk.OptionMenu(self, variable_Add, *phone_no_list)
         except:
-            #variable_Add.set("Empty")
+            variable_Add.set("Select Phone No")
             Phone_Options_Add = tk.OptionMenu(self, variable_Add, "Empty")
 
         Phone_Options_Add.grid(row=0, column=4, pady=10, padx=20, ipadx=5, ipady=5, sticky="n")
         select_button = tk.Button(self, activebackground="#8fa1a1", activeforeground="black", bd="5", bg="white",
                                   fg="black", text="GET", font=("Courier", "10", "bold"),
                                   command=lambda: [Thread(target=Fetch_Groups_Add).start()])
-        select_button.grid(row=0, column=4, pady=100, padx=20, ipadx=10, ipady=5, sticky="n")
-        treetimegroup_add = ttk.Treeview(self)
+        select_button.grid(row=0, column=4, padx=20,pady=10, ipadx=10, ipady=5, sticky="s")
+
+        count_group_add = 1
+        treetimegroup_add = ttk.Treeview(self,height=5)
         treetimegroup_add["columns"] = ("GROUP ID", "GROUPS")
 
         treetimegroup_add.column("#0", width=40, minwidth=30)
-        treetimegroup_add.column("GROUP ID", width=150, minwidth=150)
+        treetimegroup_add.column("GROUP ID", width=168, minwidth=168)
         treetimegroup_add.column("GROUPS", width=300, minwidth=300)
 
         treetimegroup_add.heading("#0", text="ID", anchor=tk.W)
         treetimegroup_add.heading("GROUP ID", text="GROUP ID", anchor=tk.W)
         treetimegroup_add.heading("GROUPS", text="GROUPS", anchor=tk.W)
 
-        treetimegroup_add.grid(row=0, column=1, columnspan=2, padx=2, pady=10, sticky=tk.NSEW)
+        treetimegroup_add.grid(row=0, column=1, columnspan=2, pady=10, sticky="n")
         Scrollbargroup_add = tk.Scrollbar(self, orient="vertical", command=treetimegroup_add.yview)
         treetimegroup_add.configure(yscroll=Scrollbargroup_add.set)
-        #treetimegroup_add.bind("<Double-1>", self.OnDoubleClick)
-        Scrollbargroup_add.grid(row=0, column=3, pady=10, sticky="ns")
+        treetimegroup_add.bind("<Double-1>", self.OnDoubleClick)
+        Scrollbargroup_add.grid(row=0, column=3,pady=10, sticky="ns")
+
+        treetimegroup_add_users=ttk.Treeview(self,height=12)
+        treetimegroup_add_users["columns"]=("Users")
+
+        treetimegroup_add_users.column('#0',width=45,minwidth=45)
+        treetimegroup_add_users.column('Users', width=185, minwidth=185)
+
+        treetimegroup_add_users.heading("#0", text="No", anchor=tk.W)
+        treetimegroup_add_users.heading("Users", text="Users", anchor=tk.W)
+
+        treetimegroup_add_users.grid(row=1, column=1,columnspan=1,padx=2, pady=1,sticky="nsew")
+        count_user=1
+
+        Scrollbargroup_add_users = tk.Scrollbar(self, orient="vertical", command=treetimegroup_add_users.yview)
+        treetimegroup_add_users.configure(yscroll=Scrollbargroup_add_users.set)
+        Scrollbargroup_add_users.grid(row=1, column=1, pady=3,sticky="nse",padx=4)
+
+        User_label = tk.Label(self, text="Select Users From:", font=("Courier", "10", "bold"))
+        User_label.grid(row=1, column=2, pady=10, ipadx=1, ipady=1,sticky="nw",padx=30)
+
+        users_button = tk.Button(self, activebackground="#8fa1a1", activeforeground="black", bd="5", bg="white",
+                                fg="black", text="USERS", font=("Courier", "8", "bold"),
+                                command=lambda: [self.open_file()])
+        users_button.grid(row=1, column=2, pady=8, padx=0, ipadx=1, ipady=1, sticky="ne")
+
+        No_select_label = tk.Label(self, text="Add          Users", font=("Courier", "10", "bold"))
+        No_select_label.grid(row=1, column=2, pady=70, ipadx=1, ipady=1,sticky="nw",padx=30)
+
+        No_select_input = tk.Entry(self, width=4, borderwidth=5, bg="#5ba6b0", fg="black", font="Calibri 15 bold")
+        No_select_input.grid(row=1, column=2,padx=67, pady=62, ipadx=5, ipady=5,sticky="nw")
+        No_select_input.insert(0,"60")
+        Time_select_label = tk.Label(self, text="Interval between     s and     s", font=("Courier", "10", "bold"))
+        Time_select_label.grid(row=1, column=2,columnspan=1, pady=130, ipadx=1, ipady=1, sticky="nw")
+        time_select_lower = tk.Entry(self, width=2, borderwidth=2, bg="#5ba6b0", fg="black", font="Calibri 10 bold")
+        time_select_lower.grid(row=1, column=2, pady=128,padx=103, ipadx=5, ipady=5, sticky="nse",)
+        time_select_lower.insert(0, "5")
+        time_select_uppper = tk.Entry(self, width=2, borderwidth=2, bg="#5ba6b0", fg="black", font="Calibri 10 bold")
+        time_select_uppper.grid(row=1, column=2, pady=128,padx=25, ipadx=5, ipady=5, sticky="nse")
+        time_select_uppper.insert(0, "10")
+
+        Clear_Added = tk.IntVar()
+        Clear_Disabled = tk.IntVar()
+        C1 = tk.Checkbutton(self, text="Clear users added to the group", variable=Clear_Added,onvalue=1, offvalue=0, height=2,width=30,font=("Courier", "10", "bold"))
+        C2 = tk.Checkbutton(self, text="Clear disabled users", variable=Clear_Disabled,onvalue=1, offvalue=0, height=2,width=30,font=("Courier", "10", "bold"))
+
+        C1.grid(row=1,column=2,columnspan=1,pady=80,sticky="se")
+        C2.grid(row=1, column=2, pady=50, sticky="sw")
+        group_input_add = tk.Entry(self, width=15, borderwidth=5, bg="#5ba6b0", fg="black", font="Calibri 15 bold")
+        group_input_add.grid(row=1, column=2, ipadx=5, ipady=5,sticky="s")
+
+    def OnDoubleClick(self,event):
+        global treetimegroup_add,group_input_add,group_list_pos_add
+        group_input_add.delete(0,last="end")
+        sel_item = treetimegroup_add.focus()
+        group_input_add.insert(0,str(treetimegroup_add.item(sel_item)["values"][0]))
+        group_list_pos_add=int(treetimegroup_add.item(sel_item)["text"])-1
+        print(group_list_pos_add)
+
+
+
+    def open_file(self):
+        global file_add,users,No_select_input,count_user,treetimegroup_add_users
+        file_add = askopenfilename()
+        print(file_add)
+        users = []
+        count=0
+        with open(file_add, encoding='UTF-8') as f:
+            rows = csv.reader(f, delimiter=",", lineterminator="\n")
+            next(rows, None)
+            for row in rows:
+                user = {}
+                user['username'] = row[0]
+                user['id'] = int(row[1])
+                user['access_hash'] = int(row[2])
+                user['name'] = row[3]
+                users.append(user)
+                count=count+1
+                if count==int(No_select_input.get()):
+                    break
+        print(users)
+        for i in range(1, count_user):
+            treetimegroup_add_users.delete(str(i))
+        count_user = 1
+        for i in range(0, len(users)):
+            treetimegroup_add_users.insert("", "end", str(count_user), text=str(count_user), value=(
+                users[i]['id']))
+            count_user = count_user + 1
+
+
+
+
 
 class PageFour(tk.Frame):
     def __init__(self,parent,controller):
