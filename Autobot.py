@@ -388,7 +388,7 @@ def Fetch_Groups_Add():
             print('Error Encountered')
 
 def Add_Groups():
-    global client_list_add, group_list_pos, groups_add, list_groups, group_input, list_groups_add,time_select_lower,time_select_upper,users,Clear_Added,Clear_Disabled,Error_label
+    global client_list_add, group_list_pos, groups_add, list_groups, group_input, list_groups_add,time_select_lower,time_select_upper,users,Clear_Added,Clear_Disabled,Error_label,users_full,file_add
     Clear_Added_list=[]
     Clear_Disabled_list=[]
     loop1 = asyncio.new_event_loop()
@@ -396,7 +396,6 @@ def Add_Groups():
     client = TelegramClient(client_list_add["Phone_No"], client_list_add["Api_Id"], client_list_add["Api_Hash"],
                             loop=loop1)
     client.connect()
-
     target_group = groups_add[int(group_list_pos_add)]
     #print(target_group)
     target_group_entity = InputPeerChannel(target_group.id, target_group.access_hash)
@@ -407,7 +406,7 @@ def Add_Groups():
             time.sleep(900)
         try:
             print("Adding {}".format(user['id']))
-            Error_label['text']="Adding {"+user['id']+"}\n"
+            Error_label['text']="Adding {"+str(user['id'])+"}\n"
 
             user_to_add = InputPeerUser(user['id'], user['access_hash'])
 
@@ -416,11 +415,12 @@ def Add_Groups():
             Error_label['text'] = "Waiting for "+time_select_lower.get()+" - "+time_select_upper.get() +"Seconds..."
             time.sleep(random.randrange(int(time_select_lower.get()), int(time_select_upper.get())))
             Clear_Added_list.append(user)
+            Error_label['text'] = "Added : "+str(user['id'])
         except PeerFloodError:
-            Error_label['text']="Getting Flood Error from telegram. Script is stopping now. Please try again after some time."
-            print("Getting Flood Error from telegram. Script is stopping now. Please try again after some time.")
+            Error_label['text']="Getting Flood Error from telegram. Script is stopping now.\n Please try again after some time."
+            print("Getting Flood Error from telegram.\n Script is stopping now. Please try again after some time.")
         except UserPrivacyRestrictedError:
-            Error_label['text']="The user's privacy settings do not allow you to do this. Skipping."
+            Error_label['text']="The user's privacy settings do not allow you to do this.\n Skipping."
             print("The user's privacy settings do not allow you to do this. Skipping.")
             Clear_Disabled_list.append(user)
         except:
@@ -429,10 +429,31 @@ def Add_Groups():
             print("Unexpected Error")
             continue
 
+    if Clear_Added==1 and Clear_Disabled==1:
+        for user_check in Clear_Added_list:
+            if user_check in users_full:
+                users_full.remove(users_full.index(user_check))
+        for user_check in Clear_Disabled_list:
+            if user_check in users_full:
+                users_full.remove(users_full.index(user_check))
+
+    if Clear_Added==0 and Clear_Disabled==1:
+        for user_check in Clear_Disabled_list:
+            if user_check in users_full:
+                users_full.remove(users_full.index(user_check))
+
+    if Clear_Added==1 and Clear_Disabled==1:
+        for user_check in Clear_Added_list:
+            if user_check in users_full:
+                users_full.remove(users_full.index(user_check))
+
+    with open(file_add, "w", encoding='UTF-8') as f:
+        writer = csv.writer(f, delimiter=",", lineterminator="\n")
+        writer.writerow(['username', 'user id', 'access hash', 'name', 'group', 'group id'])
+        for user in users_full:
+            writer.writerow([user["username"], user["id"], user["access_hash"], user["name"],user["group_name"],user["group_id"]])
+
     client.disconnect()
-
-
-
 
 
 
@@ -831,7 +852,7 @@ class PageThree(tk.Frame):
 
 
     def open_file(self):
-        global file_add,users,No_select_input,count_user,treetimegroup_add_users
+        global file_add,users,No_select_input,count_user,treetimegroup_add_users,users_full
         file_add = askopenfilename()
         print(file_add)
         users = []
@@ -845,6 +866,8 @@ class PageThree(tk.Frame):
                 user['id'] = int(row[1])
                 user['access_hash'] = int(row[2])
                 user['name'] = row[3]
+                user['group_name'] = row[4]
+                user['group_id'] = row[5]
                 users.append(user)
                 count=count+1
                 if count==int(No_select_input.get()):
@@ -858,6 +881,22 @@ class PageThree(tk.Frame):
                 users[i]['id']))
             count_user = count_user + 1
 
+        users_full=[]
+        with open(file_add, encoding='UTF-8') as f:
+            rows = csv.reader(f, delimiter=",", lineterminator="\n")
+            next(rows, None)
+            for row in rows:
+                #print(row)
+                user = {}
+                user['username'] = row[0]
+                user['id'] = int(row[1])
+                user['access_hash'] = int(row[2])
+                user['name'] = row[3]
+                user['group_name']=row[4]
+                user['group_id']=row[5]
+                users_full.append(user)
+                count=count+1
+        #print(users_full)
 
 
 
