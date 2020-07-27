@@ -170,6 +170,7 @@ def authorize():
 
                 else:
                     temp_list1[count]["Verification"] = "Verified"
+                    write_verify(user["Phone_No"])
                     print("client is connected")
                 client.disconnect()
             print(countstart)
@@ -387,8 +388,9 @@ def Fetch_Groups_Add():
             print('Error Encountered')
 
 def Add_Groups():
-    global client_list_add, group_list_pos, groups_add, list_groups, group_input, list_groups_add,time_select_lower,time_select_upper
-
+    global client_list_add, group_list_pos, groups_add, list_groups, group_input, list_groups_add,time_select_lower,time_select_upper,users,Clear_Added,Clear_Disabled,Error_label
+    Clear_Added_list=[]
+    Clear_Disabled_list=[]
     loop1 = asyncio.new_event_loop()
     asyncio.set_event_loop(loop1)
     client = TelegramClient(client_list_add["Phone_No"], client_list_add["Api_Id"], client_list_add["Api_Hash"],
@@ -396,6 +398,7 @@ def Add_Groups():
     client.connect()
 
     target_group = groups_add[int(group_list_pos_add)]
+    #print(target_group)
     target_group_entity = InputPeerChannel(target_group.id, target_group.access_hash)
     n=0
     for user in users:
@@ -404,20 +407,29 @@ def Add_Groups():
             time.sleep(900)
         try:
             print("Adding {}".format(user['id']))
+            Error_label['text']="Adding {"+user['id']+"}\n"
 
             user_to_add = InputPeerUser(user['id'], user['access_hash'])
 
             client(InviteToChannelRequest(target_group_entity, [user_to_add]))
             print("Waiting for "+time_select_lower.get()+" - "+time_select_upper.get() +"Seconds...")
+            Error_label['text'] = "Waiting for "+time_select_lower.get()+" - "+time_select_upper.get() +"Seconds..."
             time.sleep(random.randrange(int(time_select_lower.get()), int(time_select_upper.get())))
+            Clear_Added_list.append(user)
         except PeerFloodError:
+            Error_label['text']="Getting Flood Error from telegram. Script is stopping now. Please try again after some time."
             print("Getting Flood Error from telegram. Script is stopping now. Please try again after some time.")
         except UserPrivacyRestrictedError:
+            Error_label['text']="The user's privacy settings do not allow you to do this. Skipping."
             print("The user's privacy settings do not allow you to do this. Skipping.")
+            Clear_Disabled_list.append(user)
         except:
             traceback.print_exc()
+            Error_label['text'] = "Unexpected Error"
             print("Unexpected Error")
             continue
+
+    client.disconnect()
 
 
 
@@ -708,7 +720,7 @@ class PageTwo(tk.Frame):
 class PageThree(tk.Frame):
     def __init__(self,parent,controller):
         tk.Frame.__init__(self,parent)
-        global Phone_Options_Add,variable_Add,count_group_add,treetimegroup_add,group_input_add,time_select_lower,time_select_upper,count_user,treetimegroup_add_users,No_select_input
+        global Phone_Options_Add,variable_Add,count_group_add,treetimegroup_add,group_input_add,time_select_lower,time_select_upper,count_user,treetimegroup_add_users,No_select_input,Clear_Added,Clear_Disabled,Error_label
         back_button = tk.Button(self, activebackground="#8fa1a1", activeforeground="black", bd="5", bg="white",
                                 fg="black", text="BACK", font=("Courier", "10", "bold"),
                                 command=lambda: [controller.show_frame(StartPage)])
@@ -785,9 +797,9 @@ class PageThree(tk.Frame):
         time_select_lower = tk.Entry(self, width=2, borderwidth=2, bg="#5ba6b0", fg="black", font="Calibri 10 bold")
         time_select_lower.grid(row=1, column=2, pady=128,padx=103, ipadx=5, ipady=5, sticky="nse",)
         time_select_lower.insert(0, "5")
-        time_select_uppper = tk.Entry(self, width=2, borderwidth=2, bg="#5ba6b0", fg="black", font="Calibri 10 bold")
-        time_select_uppper.grid(row=1, column=2, pady=128,padx=25, ipadx=5, ipady=5, sticky="nse")
-        time_select_uppper.insert(0, "10")
+        time_select_upper = tk.Entry(self, width=2, borderwidth=2, bg="#5ba6b0", fg="black", font="Calibri 10 bold")
+        time_select_upper.grid(row=1, column=2, pady=128,padx=25, ipadx=5, ipady=5, sticky="nse")
+        time_select_upper.insert(0, "10")
 
         Clear_Added = tk.IntVar()
         Clear_Disabled = tk.IntVar()
@@ -798,6 +810,15 @@ class PageThree(tk.Frame):
         C2.grid(row=1, column=2, pady=50, sticky="sw")
         group_input_add = tk.Entry(self, width=15, borderwidth=5, bg="#5ba6b0", fg="black", font="Calibri 15 bold")
         group_input_add.grid(row=1, column=2, ipadx=5, ipady=5,sticky="s")
+
+        Fetch_button = tk.Button(self, activebackground="#8fa1a1", activeforeground="black", bd="5", bg="white",
+                                fg="black", text="ADD", font=("Courier", "10", "bold"),
+                                command=lambda: [Thread(target=Add_Groups).start()])
+        Fetch_button.grid(row=1, column=4, ipadx=35, ipady=5, sticky="s")
+
+        Error_label = tk.Label(self, text="Erros will be displayed here", font=("Courier", "10", "bold"),bg="black",fg="white",height=5,bd=4,relief="raised")
+        Error_label.grid(row=2, column=0, columnspan=5,padx=40,pady=20, ipadx=1, ipady=1, sticky="nsew")
+
 
     def OnDoubleClick(self,event):
         global treetimegroup_add,group_input_add,group_list_pos_add
@@ -828,7 +849,7 @@ class PageThree(tk.Frame):
                 count=count+1
                 if count==int(No_select_input.get()):
                     break
-        print(users)
+        #print(users)
         for i in range(1, count_user):
             treetimegroup_add_users.delete(str(i))
         count_user = 1
