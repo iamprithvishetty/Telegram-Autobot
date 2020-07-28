@@ -429,7 +429,12 @@ def Add_Groups():
             print("Unexpected Error")
             continue
 
-    if Clear_Added==1 and Clear_Disabled==1:
+    print("Clear dis",Clear_Disabled.get(),"Clear add",Clear_Added.get())
+
+    print(Clear_Added_list)
+    print(Clear_Disabled_list)
+
+    if Clear_Added.get()==1 and Clear_Disabled.get()==0:
         for user_check in Clear_Added_list:
             if user_check in users_full:
                 users_full.remove(users_full.index(user_check))
@@ -437,12 +442,14 @@ def Add_Groups():
             if user_check in users_full:
                 users_full.remove(users_full.index(user_check))
 
-    if Clear_Added==0 and Clear_Disabled==1:
+
+
+    if Clear_Added.get()==0 and Clear_Disabled.get()==1:
         for user_check in Clear_Disabled_list:
             if user_check in users_full:
                 users_full.remove(users_full.index(user_check))
 
-    if Clear_Added==1 and Clear_Disabled==1:
+    if Clear_Added.get()==1 and Clear_Disabled.get()==0:
         for user_check in Clear_Added_list:
             if user_check in users_full:
                 users_full.remove(users_full.index(user_check))
@@ -895,7 +902,6 @@ class PageThree(tk.Frame):
                 user['group_name']=row[4]
                 user['group_id']=row[5]
                 users_full.append(user)
-                count=count+1
         #print(users_full)
 
 
