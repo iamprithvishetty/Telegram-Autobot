@@ -412,7 +412,7 @@ def Add_Groups():
 
             client(InviteToChannelRequest(target_group_entity, [user_to_add]))
             print("Waiting for "+time_select_lower.get()+" - "+time_select_upper.get() +"Seconds...")
-            Error_label['text'] = "Waiting for "+time_select_lower.get()+" - "+time_select_upper.get() +"Seconds..."
+            Error_label['text'] =Error_label['text']+ "Waiting for "+time_select_lower.get()+" - "+time_select_upper.get() +"Seconds..."
             time.sleep(random.randrange(int(time_select_lower.get()), int(time_select_upper.get())))
             Clear_Added_list.append(user)
             Error_label['text'] = "Added : "+str(user['id'])
@@ -429,37 +429,38 @@ def Add_Groups():
             print("Unexpected Error")
             continue
 
-    print("Clear dis",Clear_Disabled.get(),"Clear add",Clear_Added.get())
+    #print("Clear dis",Clear_Disabled.get(),"Clear add",Clear_Added.get())
 
-    print(Clear_Added_list)
-    print(Clear_Disabled_list)
+    #print(Clear_Added_list)
+    #print(Clear_Disabled_list)
 
-    if Clear_Added.get()==1 and Clear_Disabled.get()==0:
+    if Clear_Added.get()==1 and Clear_Disabled.get()==1:
         for user_check in Clear_Added_list:
             if user_check in users_full:
-                users_full.remove(users_full.index(user_check))
+                users_full.remove(user_check)
         for user_check in Clear_Disabled_list:
             if user_check in users_full:
-                users_full.remove(users_full.index(user_check))
+                users_full.remove(user_check)
 
 
 
     if Clear_Added.get()==0 and Clear_Disabled.get()==1:
         for user_check in Clear_Disabled_list:
             if user_check in users_full:
-                users_full.remove(users_full.index(user_check))
+                users_full.remove(user_check)
 
     if Clear_Added.get()==1 and Clear_Disabled.get()==0:
         for user_check in Clear_Added_list:
             if user_check in users_full:
-                users_full.remove(users_full.index(user_check))
+                users_full.remove(user_check)
+
 
     with open(file_add, "w", encoding='UTF-8') as f:
         writer = csv.writer(f, delimiter=",", lineterminator="\n")
         writer.writerow(['username', 'user id', 'access hash', 'name', 'group', 'group id'])
         for user in users_full:
             writer.writerow([user["username"], user["id"], user["access_hash"], user["name"],user["group_name"],user["group_id"]])
-
+    Error_label['text']="DONE"
     client.disconnect()
 
 
@@ -861,7 +862,7 @@ class PageThree(tk.Frame):
     def open_file(self):
         global file_add,users,No_select_input,count_user,treetimegroup_add_users,users_full
         file_add = askopenfilename()
-        print(file_add)
+        #print(file_add)
         users = []
         count=0
         with open(file_add, encoding='UTF-8') as f:
@@ -902,7 +903,6 @@ class PageThree(tk.Frame):
                 user['group_name']=row[4]
                 user['group_id']=row[5]
                 users_full.append(user)
-        #print(users_full)
 
 
 
